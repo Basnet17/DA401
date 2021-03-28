@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/EarlyResultsData/combinedDataset.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/FinalData.csv">
           <value>
             <Attribute>
