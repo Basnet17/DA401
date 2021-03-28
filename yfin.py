@@ -78,7 +78,7 @@ class Yfin:
 
     def checkYahoo(self):
         mainData = pd.read_csv("cleaned1.csv")
-        stoppedIndex = 7698
+        stoppedIndex = 8275
         for index, row in mainData.iterrows():
             if index > stoppedIndex:
                 value1 = re.sub('[^A-Za-z0-9.]+', '', row[0])
@@ -156,17 +156,17 @@ if __name__ == '__main__':
     '''
     Run this function to grab data from Yahoo finance related to that specific stock
     '''
-    #firstOne.checkYahoo()
+    firstOne.checkYahoo()
 
     # ticker = yf.Ticker("ADOM")
     # old = yf.download("AITX", "2020-12-30")
     # print(old['Close'][0])
 
-    #######firstOne.makeDictionary()
+
 
     # checkData = pd.read_csv("cleaned1.csv")
     # for index, row in checkData.iterrows():
-    #     if index == 7699:
+    #     if index == 8276:
     #         print(row[0])
 
 
