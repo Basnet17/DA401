@@ -36,10 +36,10 @@ class Analysis:
         #totalData = pd.read_csv('EarlyResultsData/totalDataSet.csv')
         #print(totalData['Number of Comments'].mean())
         #totalData = totalData[totalData['Present Day'] != -1]
-        #totalData.to_csv('withoutNegOnes.csv', index=False)
+        #totalData.to_csv('FinalDataForEarly.csv', index=False)
 
     def workingWithActual(self):
-        actualData = pd.read_csv('EarlyResultsData/withoutNegOnes.csv')
+        actualData = pd.read_csv('EarlyResultsData/FinalDataForEarly.csv')
         print(actualData)
 
 if __name__ == '__main__':
