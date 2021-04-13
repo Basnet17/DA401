@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="74e81817-95d2-497d-b594-16b51dc45f81" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/EarlyResultsData/withoutNegOnes.csv" beforeDir="false" afterPath="$PROJECT_DIR$/EarlyResultsData/FinalDataForEarly.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/analysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/14days.csv" beforeDir="false" afterPath="$PROJECT_DIR$/14days.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yfin.py" beforeDir="false" afterPath="$PROJECT_DIR$/yfin.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,7 +34,7 @@
       <recent name="$PROJECT_DIR$/DataCollected" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.analysis">
+  <component name="RunManager" selected="Python.yfin">
     <configuration name="analysis" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="DA401" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -141,8 +142,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.analysis" />
         <item itemvalue="Python.yfin" />
+        <item itemvalue="Python.analysis" />
         <item itemvalue="Python.yahooExtra" />
         <item itemvalue="Python.pushshiftTry" />
         <item itemvalue="Python.extra" />
@@ -170,5 +171,6 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
 </project>

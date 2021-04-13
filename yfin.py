@@ -78,7 +78,7 @@ class Yfin:
 
     def checkYahoo(self):
         mainData = pd.read_csv("cleaned1.csv")
-        stoppedIndex = 10880
+        stoppedIndex = 26647
         for index, row in mainData.iterrows():
             if index > stoppedIndex:
                 value1 = re.sub('[^A-Za-z0-9.]+', '', row[0])
@@ -159,14 +159,12 @@ if __name__ == '__main__':
     firstOne.checkYahoo()
 
     # ticker = yf.Ticker("ADOM")
-    # old = yf.download("NXTD", "2020-11-17")
+    # old = yf.download("GRIL", "2020-06-20")
     # print(old['Close'][0])
-
-
-
+    #
     # checkData = pd.read_csv("cleaned1.csv")
     # for index, row in checkData.iterrows():
-    #     if index == 10880:
+    #     if index == 26647:
     #         print(row[0])
 
 
