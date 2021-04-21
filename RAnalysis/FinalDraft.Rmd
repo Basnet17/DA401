@@ -1,0 +1,506 @@
+---
+title: "EarlyResult"
+author: "Pritam Basnet"
+date: "4/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(ggfortify)
+library(caret)
+library(plotly)
+library(caret)
+library(ISLR)
+library(pROC) #For building ROC curve
+```
+
+
+```{r}
+data <- read_csv('/home/basnet_p1/DA401/FinalDataForDraft.csv')
+
+filteredData <- data %>% filter(data$`+14`>-1)
+
+filteredData1 <- filteredData %>% select(-c("Total Awards Received"))
+
+names <- c("Unnamed: 0","Symbol","Stock","Post Flair","Score","Upvote ratio",
+           "Number of Comments","Post Date", "Post Id","Posted by","Total Awards Received","Date","Present Day",
+           "-1" ,"+1","-2","+2","-3" ,"+3","-4","+4", "-5","+5" ,"-6","+6","-7" ,"+7","-8" ,"+8","-9",
+           "+9","-10" ,"+10","-11","+11","-12","+12","-13","+13","-14","+14")
+
+filteredData1 <- setnames(filteredData1,names)
+
+filteredData1 <- filteredData1 %>% 
+  filter(filteredData1$`-14`< 5 | filteredData1$`+14` < 5 | filteredData1$`Present Day` < 5)
+```
+
+
+```{r}
+filteredData <- filteredData1
+filteredData["DifferenceFourteen"] = filteredData$`+14`-filteredData$`-14`
+filteredData["DifferenceSeven"] = filteredData$`+7`-filteredData$`-7`
+filteredData["DifferenceFive"] = filteredData$`+5`-filteredData$`-5`
+
+filteredData["Difference1to14"] = filteredData$`+14`-filteredData$`-1`
+filteredData["Difference1to7"] = filteredData$`+7`-filteredData$`-1`
+filteredData["Difference1to1"] = filteredData$`+2`-filteredData$`-1`
+filteredData["Difference-7to1"] = filteredData$`+2` - filteredData$`-7`
+
+filteredData["DD"] = ifelse(filteredData$`Post Flair`== "DD" | filteredData$`Post Flair`=="DD :DD:", 1, 0)
+filteredData["Catalyst"] = ifelse(filteredData$`Post Flair`== "Catalyst" | filteredData$`Post Flair`=="Catalyst :Bagger:", 1, 0)
+filteredData["Bullish"] = ifelse(filteredData$`Post Flair`== "Bullish :Bullish:", 1, 0)
+filteredData["Technical Analysis"] = ifelse(filteredData$`Post Flair`== "technical analysis" | filteredData$`Post Flair`=="Technical Analysis", 1, 0)
+filteredData["Megathread"] = ifelse(filteredData$`Post Flair`== "Megathread", 1, 0)
+
+filteredData["IncreasedSeven"]= ifelse(filteredData$DifferenceSeven > 0, 1, 0)
+filteredData["IncreasedFourteen"]= ifelse(filteredData$DifferenceFourteen > 0, 1, 0)
+filteredData["IncreasedFive"] = ifelse(filteredData$DifferenceFive > 0, 1, 0)
+
+filteredData["Increased1to7"] = ifelse(filteredData$Difference1to7 > 0, 1, 0)
+filteredData["Increased1to14"] = ifelse(filteredData$Difference1to14 > 0, 1, 0)
+filteredData["Increased1to1"] = ifelse(filteredData$Difference1to1 > 0, 1, 0)
+filteredData["CommentsMorethan20"] = ifelse(filteredData$`Number of Comments`>20, 1, 0)
+filteredData["UpvoteMorethan.6"] = ifelse(filteredData$`Upvote ratio` > 0.6, 1, 0)
+```
+
+
+#Summary of these variables
+```{r}
+summary(filteredData$IncreasedFive)
+sd(filteredData$IncreasedFive)
+```
+
+
+```{r}
+
+fiveDaysData <- filteredData[13:23]
+fiveDaysData['Number of Comments'] = filteredData$`Number of Comments`
+```
+
+
+```{r}
+fiveDaysData <- fiveDaysData %>% filter(fiveDaysData$`Present Day` <= 5)
+```
+
+
+```{r}
+fiveDaysData <- fiveDaysData %>% filter(fiveDaysData$`-1` != 0)
+fiveDaysData <- fiveDaysData %>% filter(fiveDaysData$`-2` != 0)
+fiveDaysData <- fiveDaysData %>% filter(fiveDaysData$`-3` != 0)
+fiveDaysData <- fiveDaysData %>% filter(fiveDaysData$`-4` != 0)
+fiveDaysData <- fiveDaysData %>% filter(fiveDaysData$`-5` != 0)
+#fiveDaysData <-fiveDaysData[!is.na(fiveDaysDataData$1) & 
+#                              !is.na(trainingData$DD)& !is.na(trainingData$Catalyst) &
+#                            !is.na(trainingData$Bullish), ]
+```
+
+```{r}
+fiveDaysData['FivePercent'] <- (fiveDaysData$`+5`-fiveDaysData$`-5`)/fiveDaysData$`-5`
+
+fiveDaysData['one'] <- (fiveDaysData$`+1`-fiveDaysData$`Present Day`)/fiveDaysData$`Present Day`
+fiveDaysData['two'] <- (fiveDaysData$`+2`-fiveDaysData$`Present Day`)/fiveDaysData$`Present Day`
+fiveDaysData['three'] <- (fiveDaysData$`+3`-fiveDaysData$`Present Day`)/fiveDaysData$`Present Day`
+fiveDaysData['four'] <- (fiveDaysData$`+4`-fiveDaysData$`Present Day`)/fiveDaysData$`Present Day`
+fiveDaysData['five'] <- (fiveDaysData$`+5`-fiveDaysData$`Present Day`)/fiveDaysData$`Present Day`
+
+fiveDaysData['-one'] <- (fiveDaysData$`Present Day`-fiveDaysData$`-1`)/fiveDaysData$`-1`
+fiveDaysData['-two'] <- (fiveDaysData$`Present Day`-fiveDaysData$`-2`)/fiveDaysData$`-2`
+fiveDaysData['-three'] <- (fiveDaysData$`Present Day`-fiveDaysData$`-3`)/fiveDaysData$`-3`
+fiveDaysData['-four'] <- (fiveDaysData$`Present Day`-fiveDaysData$`-4`)/fiveDaysData$`-4`
+fiveDaysData['-five'] <- (fiveDaysData$`Present Day`-fiveDaysData$`-5`)/fiveDaysData$`-5`
+
+percentageVec <- c(mean(fiveDaysData$`-five`), mean(fiveDaysData$`-four`), mean(fiveDaysData$`-three`),
+                   mean(fiveDaysData$`-two`),
+                   mean(fiveDaysData$`-one`), 0, mean(fiveDaysData$one), mean(fiveDaysData$two),
+                   mean(fiveDaysData$three), mean(fiveDaysData$four), mean(fiveDaysData$five))
+
+
+daysVec <- c(-5,-4,-3,-2,-1,0, 1, 2, 3, 4, 5)
+daysMean <- data.frame(percentageVec, daysVec)
+#ggplot(daysMean, aes(x = daysVec, y = percentageVec)) + geom_point() + xlab("Days") + 
+#  ylab("Mean percentage change in price") +
+#  ggtitle("Mean percentage change in price across 10 days") + 
+#  scale_x_continuous(breaks=daysVec)
+```
+
+
+```{r}
+percentFive <- c(mean(fiveDaysData$one), mean(fiveDaysData$two),
+                   mean(fiveDaysData$three), mean(fiveDaysData$four), mean(fiveDaysData$five))
+fiveD <-c(1,2,3,4,5)
+fiveDaysChange <- data.frame(percentFive, fiveD)
+
+plot1 <- ggplot(fiveDaysChange, aes(x = fiveD, y = percentFive)) + geom_bar(stat="identity",fill="steelblue") + xlab("Days") + 
+  ylab("Mean percentage change in price") +
+  ggtitle("Mean percentage change in price across 5 days") + 
+  scale_x_continuous(breaks=fiveD)
+plot1
+
+ggsave(filename="FiveDays.png", plot=plot1, device="png", path='/home/basnet_p1/DA401/Graphs', dpi =500)
+```
+
+
+#Grouping by the number of users
+```{r}
+percentFive
+```
+
+
+
+```{r}
+#Getting the training and test data
+## 80% of the sample size
+smp_size <- floor(0.8 * nrow(filteredData))
+
+## set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(filteredData)), size = smp_size)
+
+trainingData <- filteredData[train_ind, ]
+testData <- filteredData[-train_ind, ]
+```
+
+
+```{r}
+trainingData <-trainingData[!is.na(trainingData$Increased1to7) & 
+                              !is.na(trainingData$DD)& !is.na(trainingData$Catalyst) &
+                            !is.na(trainingData$Bullish), ]
+testData <- testData[!is.na(testData$Increased1to7) & 
+                              !is.na(testData$DD)& !is.na(testData$Catalyst) &
+                            !is.na(testData$Bullish), ]
+
+```
+
+
+```{r}
+regressControl1 = trainControl(method= "repeatedcv",number = 10, repeats=5)
+
+accuracy <- c()
+values <- c()
+
+variableSelTrain <- trainingData$`Number of Comments`
+variableSelTest <- testData$`Number of Comments`
+
+for(i in 101:300){
+  
+  numCommentsTrain <- ifelse(variableSelTrain >=i, 1, 0)
+  trainingData['prelimCom'] = numCommentsTrain
+  
+  numCommentsTest <- ifelse(variableSelTest >=i, 1, 0)
+  testData['prelimCom'] = numCommentsTest
+    
+  opti <- bquote(as.factor(IncreasedFive) ~ DD + Catalyst + Bullish + Megathread + prelimCom)
+  
+  
+  #polyCV <- bquote(y ~ poly(t, .(i)))
+  
+  lmModel <- train(as.formula(opti), data= trainingData, method='glm', 
+                   trControl= regressControl1, na.action = na.pass)
+  
+  #This is for test although name confuses
+  predictionTrain1 <- predict(lmModel, testData, type="prob")
+  #This is for test although name confuses
+  default_probabilityTrain1<- predictionTrain1[,2]
+  testData['Check1'] = default_probabilityTrain1
+
+  findThreshold <- testData %>% filter(IncreasedFive == 1)
+  
+  delta = median(findThreshold$Check1)
+
+  predicted_defaultTrain1= ifelse(default_probabilityTrain1 >= delta,1,0) #Class prediction
+
+  cm <- confusionMatrix(factor(testData$IncreasedFive), factor(predicted_defaultTrain1), positive="1")
+  accuracy <- c(accuracy, cm$overall['Accuracy'])
+  values <- c(values, i)
+}
+
+cvdata2 <- data.frame(accuracy, values)
+```
+
+
+```{r}
+accuracyData <- rbind(cvdata1, cvdata2)
+```
+
+
+```{r}
+accuracyData <- rbind(cvdata1, cvdata2)
+val1 <- accuracyData %>% filter(accuracyData$accuracy == max(accuracyData$accuracy))
+
+plotCommentsAccuracy <- ggplot(accuracyData, aes(x = values, y = accuracy)) + 
+  geom_line() + ylim(0.553, 0.558) +
+  xlim(50, 130) + xlab("Number of Comments") + 
+  ylab("Accuracy") +
+  ggtitle("Graph showing the change of accuracy as number of comments increased") 
+
+ggsave(filename="CommentsAccuracy.png", plot=plotCommentsAccuracy, device="png", path='/home/basnet_p1/DA401/Graphs', dpi =500)
+```
+
+
+```{r}
+trainingData['CommentsMorethan102'] <- ifelse(trainingData$`Number of Comments` > 102, 1, 0)
+testData['CommentsMorethan102'] <- ifelse(testData$`Number of Comments` > 102, 1, 0)
+```
+
+
+
+```{r}
+regressControl1 = trainControl(method= "repeatedcv",number = 10, repeats=5)
+
+accuracy1 <- c()
+values1 <- c()
+
+variableSelTrainUpvote <- trainingData$`Upvote ratio`
+variableSelTestUpvote <- testData$`Upvote ratio`
+i = 0.01
+
+while(i < 1.00){
+  
+  upvoteTrain <- ifelse(variableSelTrainUpvote >=i, 1, 0)
+  trainingData['prelimUpvote'] = upvoteTrain
+  
+  upvoteTest <- ifelse(variableSelTestUpvote >=i, 1, 0)
+  testData['prelimUpvote'] = upvoteTest
+    
+  opti <- bquote(as.factor(IncreasedFive) ~ DD + Catalyst + Bullish + CommentsMorethan102+
+                   Megathread + prelimUpvote)
+  
+  
+  #polyCV <- bquote(y ~ poly(t, .(i)))
+  
+  lmModel <- train(as.formula(opti), data= trainingData, method='glm', 
+                   trControl= regressControl1, na.action = na.pass)
+  
+  #This is for test although name confuses
+  predictionTrain1 <- predict(lmModel, testData, type="prob")
+  #This is for test although name confuses
+  default_probabilityTrain1<- predictionTrain1[,2]
+  testData['Check1'] = default_probabilityTrain1
+
+  findThreshold <- testData %>% filter(IncreasedFive == 1)
+  
+  delta = median(findThreshold$Check1)
+
+  predicted_defaultTrain1= ifelse(default_probabilityTrain1 >= delta,1,0) #Class prediction
+
+  cm <- confusionMatrix(factor(testData$IncreasedFive), factor(predicted_defaultTrain1), positive="1")
+  accuracy1 <- c(accuracy1, cm$overall['Accuracy'])
+  values1 <- c(values1, i)
+  
+  i = i + 0.01
+}
+
+cvdataUpvote <- data.frame(accuracy1, values1)
+```
+
+
+```{r}
+ggplot(cvdataUpvote, aes(x = values1, y = accuracy1)) + geom_line() 
+
+val2 <- cvdataUpvote %>% filter(cvdataUpvote$accuracy == max(cvdataUpvote$accuracy))
+```
+
+
+```{r}
+trainingData['UpvoteMorethan_0.19'] <- ifelse(trainingData$`Upvote ratio` > 0.19, 1, 0)
+testData['UpvoteMorethan_0.19'] <- ifelse(testData$`Upvote ratio` > 0.19, 1, 0)
+```
+
+
+
+```{r}
+regressControl1 = trainControl(method= "repeatedcv",number = 10, repeats=5)
+
+accuracyScore <- c()
+valuesScore <- c()
+
+scoreSelTrain <- trainingData$Score
+scoreSelTest <- testData$Score
+
+for(i in 0:200){
+  
+  scoreTrain <- ifelse(scoreSelTrain >=i, 1, 0)
+  trainingData['prelimScore'] = scoreTrain
+  
+  scoreTest <- ifelse(scoreSelTest >=i, 1, 0)
+  testData['prelimScore'] = scoreTest
+    
+  opti <- bquote(as.factor(IncreasedFive) ~ DD + Catalyst + Bullish + 
+                   Megathread + CommentsMorethan102+ UpvoteMorethan_0.19 + prelimScore)
+  
+  
+  #polyCV <- bquote(y ~ poly(t, .(i)))
+  
+  lmModel <- train(as.formula(opti), data= trainingData, method='glm', 
+                   trControl= regressControl1, na.action = na.pass)
+  
+  #This is for test although name confuses
+  predictionTrain1 <- predict(lmModel, testData, type="prob")
+  #This is for test although name confuses
+  default_probabilityTrain1<- predictionTrain1[,2]
+  testData['Check1'] = default_probabilityTrain1
+
+  findThreshold <- testData %>% filter(IncreasedFive == 1)
+  
+  delta = median(findThreshold$Check1)
+
+  predicted_defaultTrain1= ifelse(default_probabilityTrain1 >= delta,1,0) #Class prediction
+
+  cm <- confusionMatrix(factor(testData$IncreasedFive), factor(predicted_defaultTrain1), positive="1")
+  accuracyScore <- c(accuracyScore, cm$overall['Accuracy'])
+  valuesScore <- c(valuesScore, i)
+}
+
+scoreData <- data.frame(accuracyScore, valuesScore)
+```
+
+
+```{r}
+maxScore <- scoreData %>% filter(scoreData$accuracyScore == max(scoreData$accuracyScore))
+maxScore
+ggplot(scoreData, aes(x = valuesScore, y = accuracyScore)) + geom_line() 
+```
+
+
+```{r}
+trainingData['ScoreMoreThan2'] <- ifelse(trainingData$Score >= 2, 1, 0)
+testData['ScoreMoreThan2'] <- ifelse(testData$Score > 2, 1, 0)
+```
+
+
+```{r}
+train1 <- caret::train(as.factor(IncreasedFive) ~ DD + Catalyst + Bullish + 
+                   Megathread + CommentsMorethan102 + UpvoteMorethan.6 + ScoreMoreThan2, 
+                   data = trainingData, method = "glm", na.action = na.pass)
+
+summary(train1)
+  #This is for test although name confuses
+final1 <- predict(train1, testData, type="prob")
+  #This is for test although name confuses
+final_probabilityTrain1<- final1[,2]
+testData['Check1'] = final_probabilityTrain1
+
+finalfindThreshold <- testData %>% filter(IncreasedFive == 1)
+  
+deltafinal = median(finalfindThreshold$Check1)
+
+final_predicted_defaultTrain1= ifelse(final_probabilityTrain1 >= deltafinal,1,0) #Class prediction
+
+cm <- confusionMatrix(factor(testData$IncreasedFive), factor(final_predicted_defaultTrain1), positive="1")
+cm
+cm$overall['Accuracy']
+```
+
+
+
+
+```{r}
+
+#prediction for our model
+predictionTrain1 <- predict(train1, testData, type="prob")
+default_probabilityTrain1<- predictionTrain1[,2]
+length(default_probabilityTrain1)
+
+```
+
+
+```{r}
+sd(filteredData$Score)
+summary(filteredData$Score)
+
+
+nrow(filteredData[filteredData$DD == 1, ])/nrow(filteredData)
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+checktrain1 <- predict(train1, testData, type="prob")
+checking <- checktrain1[,2]
+testData['Check1'] = checking
+
+findThreshold <- testData %>% filter(IncreasedFive == 1)
+median(findThreshold$Check1)
+```
+
+
+```{r}
+delta = 0.5
+
+predicted_defaultTrain1= ifelse(default_probabilityTrain1 >= delta,1,0) #Class prediction
+
+#confusion matrix for our final model
+cm <- confusionMatrix(factor(testData$IncreasedFive), factor(predicted_defaultTrain1), positive="1")
+cm$overall['Accuracy']
+```
+
+
+```{r}
+defaultROC = roc(trainingData$IncreasedFive, default_probabilityTrain1)
+plot.roc(defaultROC) #Plots ROC curve
+defaultROC$auc  #Area Under the Curve
+```
+
+
+```{r}
+mean(fiveDaysData$FivePercent)
+plot2 <- ggplot(fiveDaysData, aes(x = `Number of Comments`, y = FivePercent)) + 
+  geom_point() +
+  xlab("Number of Comments") + 
+  ylab("Price change -5th to 5th day") +
+  ggtitle("Graph showing the relationship between price change and number of comments") +
+  ylim(0,1)+ xlim(0,200)+
+  geom_smooth(method=lm)
+
+ggsave(filename="NumComments.png", plot=plot2, device="png", path='/home/basnet_p1/DA401/Graphs', dpi =500)
+
+```
+
+
+```{r}
+logModel <- glm(IncreasedFive ~ DD + Catalyst + Bullish + 
+                   Megathread + CommentsMorethan20 + UpvoteMorethan.6,
+                family=binomial, data=trainingData)
+
+summary(logModel)
+```
+
+
+
+```{r}
+regressControl1 = trainControl(method= "repeatedcv",number = 10, repeats=5)
+
+cvMSE <- c()
+degreesCV <- c()
+cvMSEtest <- c()
+for(i in 1:100){
+  polyCV <- bquote(y ~ poly(t, .(i)))
+  lmModel <- train(as.formula(polyCV), data= test1, method='lm', trControl= regressControl1)
+  cvMSEtest <- c(cvMSEtest, mean((test2$y - predict(lmModel, newdata=test2))^2))
+  cvMSE[i] <- (lmModel$results$RMSE)^2
+  degreesCV <- c(degreesCV,i)
+}
+cvdata1 <- data.frame(cvMSE, degreesCV, cvMSEtest)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
